@@ -11,7 +11,7 @@ CONSOLE_HANDLER = logging.StreamHandler()
 CONSOLE_HANDLER.setLevel(logging.DEBUG)
 CONSOLE_HANDLER.setFormatter(FORMATTER)
 
-LOGGER = logging.getLogger('wakeupandroid')
+LOGGER = logging.getLogger('ping-pong-server')
 LOGGER.setLevel(logging.DEBUG)
 LOGGER.addHandler(CONSOLE_HANDLER)
 
