@@ -11,7 +11,7 @@ CONSOLE_HANDLER = logging.StreamHandler()
 CONSOLE_HANDLER.setLevel(logging.DEBUG)
 CONSOLE_HANDLER.setFormatter(FORMATTER)
 
-LOGGER = logging.getLogger('ping-pong-server')
+LOGGER = logging.getLogger('pingpongserver')
 LOGGER.setLevel(logging.DEBUG)
 LOGGER.addHandler(CONSOLE_HANDLER)
 
@@ -19,18 +19,43 @@ LOGGER.addHandler(CONSOLE_HANDLER)
 SERVER_SOCKET_BACKLOG = 5
 SERVER_PORT = 9999
 SERVER_RUNNING = True
-SERVER_INTERVAL_SECONDS = 1
+SERVER_RECEIVE_BUFFER_SIZE = 1024
 
 
-#-------------------------------------------------------------------------------
-# MAIN
-#-------------------------------------------------------------------------------
+def wait_for_client_connection(server_socket):
+    """
+    Wait for a client connection on the given server socket
+    """
+
+    LOGGER.info('Waiting for connection')
+
+    (client_socket, client_address) = server_socket.accept()
+    LOGGER.info('Received connection from %s', client_address[0])
+
+    return client_socket
+
+
+def read_client_message(client_socket):
+    """
+    Read a message from the given socket
+    """
+
+    LOGGER.info('Waiting for client message')
+
+    client_message = client_socket.recv(SERVER_RECEIVE_BUFFER_SIZE)
+
+    if client_message == '':
+        LOGGER.info('Detected disconnect while waiting for message')
+        return None
+    else:
+        LOGGER.info('Received client message: "%s"', client_message)
+        return client_message
+
+
 def main():
-
-    global LOGGER
-    global SERVER_SOCKET_BACKLOG
-    global SERVER_PORT
-    global SERVER_RUNNING
+    """
+    MAIN
+    """
 
     # stateful variables
     client_connection = None
@@ -42,7 +67,7 @@ def main():
     # bind to the host:port
     host = socket.gethostname()
     port = SERVER_PORT
-    LOGGER.info('Binding to {}:{}'.format(host, port))
+    LOGGER.info('Binding to %s:%d', host, port)
     server_socket.bind((host, port))
 
     # listen for connections
@@ -51,30 +76,36 @@ def main():
     # main
     while SERVER_RUNNING:
 
-        # wait for a client connection if not connected
+        # wait for client connection if client not connected
         if client_connection is None:
-            LOGGER.info('Waiting for connection')
+            client_connection = wait_for_client_connection(server_socket)
 
-            # establish connection with client
-            (new_client_connection, client_address) = server_socket.accept()
-            LOGGER.info('Received connection from {}'.format(client_address[0]))
-            client_connection = new_client_connection
+        # attempt to read client message
+        client_message = read_client_message(client_connection)
 
-        # attempt to send message
-        message = '{}: Hi'.format(time.time())
+        if client_message is not None:
 
-        try:
-            # TODO: check bytes sent (return value from send)
-            LOGGER.info('Sending message "{}"'.format(message))
-            client_connection.send(message)
-        except IOError, e:
-            # TODO: handle other IOErrors
-            if e.errno == errno.EPIPE:
-                LOGGER.info('Detected disconnect')
-                client_connection = None
+            # client sent ping message
+            if client_message == 'ping':
 
-        # rest
-        time.sleep(SERVER_INTERVAL_SECONDS)
+                # attempt to send pong
+                message = 'pong ({})'.format(time.time())
+
+                try:
+                    LOGGER.info('Sending "%s"', message)
+                    client_connection.send(message)
+                except IOError, error:
+                    if error.errno == errno.EPIPE:
+                        LOGGER.info('Detected disconnect')
+                        client_connection = None
+
+            # client sent unknown message
+            else:
+                LOGGER.info('Received unknown message: "%s"', client_message)
+
+        # client disconnected
+        else:
+            client_connection = None
 
 
 if __name__ == '__main__':
