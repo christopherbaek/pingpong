@@ -20,6 +20,7 @@ SERVER_SOCKET_BACKLOG = 5
 SERVER_PORT = 9999
 SERVER_RUNNING = True
 SERVER_RECEIVE_BUFFER_SIZE = 1024
+CLIENT_SOCKET_TIMEOUT_SECONDS = 5
 
 
 def wait_for_client_connection(server_socket):
@@ -32,6 +33,7 @@ def wait_for_client_connection(server_socket):
     (client_socket, client_address) = server_socket.accept()
     LOGGER.info('Received connection from %s', client_address[0])
 
+    client_socket.settimeout(CLIENT_SOCKET_TIMEOUT_SECONDS)
     return client_socket
 
 
@@ -42,7 +44,11 @@ def read_client_message(client_socket):
 
     LOGGER.info('Waiting for client message')
 
-    client_message = client_socket.recv(SERVER_RECEIVE_BUFFER_SIZE)
+    try:
+        client_message = client_socket.recv(SERVER_RECEIVE_BUFFER_SIZE)
+    except socket.timeout:
+        LOGGER.info('Timed out waiting for message')
+        return None
 
     if client_message == '':
         LOGGER.info('Detected disconnect while waiting for message')
