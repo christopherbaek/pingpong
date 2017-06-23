@@ -18,6 +18,15 @@
       <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
+
+  <!-- Application -->
+  <style>
+    #console {
+      background-color: black;
+      color: white;
+      font-family: "Lucida Console", Monaco, monospace;
+    }
+  </style>
 </head>
 <body>
 
@@ -35,14 +44,9 @@
     <div class="row">
       <div class="col-xs-12">
         <div class="panel panel-default">
-          <div class="panel-heading">Status</div>
+          <div class="panel-heading">Controls</div>
           <div class="panel-body">
-            <div>
-              Device Connection Status: Unknown
-            </div>
-            <div>
-              Device ID: Unknown
-            </div>
+            <button id="send-greeting-button" class="btn btn-default" type="submit">Send Greeting</button>
           </div>
         </div>
       </div>
@@ -50,12 +54,20 @@
     <div class="row">
       <div class="col-xs-12">
         <div class="panel panel-default">
-          <div class="panel-heading">Controls</div>
+          <div class="panel-heading">Status</div>
           <div class="panel-body">
-            <button id="send-greeting-button" class="btn btn-default" type="submit">Send Greeting</button>
+            <div>
+              Admin Server Connection Status: <span id="admin-server-connection-status">Unknown</span>
+            </div>
+            <div>
+              Device Connection Status: <span id="device-connection-status">Unknown</span>
+            </div>
+            <div>
+              Device ID: <span id="device-id">Unknown</span>
+            </div>
+            <textarea id="console" class="form-control" rows="10"></textarea>
           </div>
         </div>
-        
       </div>
     </div>
   </div>
@@ -68,11 +80,70 @@
           integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
           crossorigin="anonymous"></script>
 
+  <!-- Socket.io -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"
+          integrity="sha256-sdmLD9jD1PIzq3KOQPNSGZYxjv76rds79Mnyk5JNp1M="
+          crossorigin="anonymous"></script>
+
+  <!-- moment.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.js"
+          integrity="sha256-GSRe5cHmmTD3DgBxRifzkNLaW1iwPTzt9kJ86rGa8tg="
+          crossorigin="anonymous"></script>
+
   <!-- Application -->
   <script>
+    function logConsoleMessage(message) {
+      var date = moment().format('YYYY-MM-DD HH:mm:ss.SSS')
+      var consoleMessage = date + ': ' + message;
+      var oldValue = $('#console').val();
+
+      // only add a new line if there was previous contents
+      var newValue;
+
+      if (oldValue) {
+        newValue = oldValue + '\n' + consoleMessage;
+      } else {
+        newValue = consoleMessage;
+      }
+
+      $('#console').val(newValue);
+    }
+
     $('#send-greeting-button').click(function(event) {
       alert('Hello');
     });
+
+    //var socket = io.connect('http://' + document.domain + ':' + location.port);
+    var socket = io.connect('http://localhost:5000');
+
+    socket.on('connect', function() {
+      $('#admin-server-connection-status').text('Connected');
+      $('#admin-server-connection-status').css('color', 'green');
+      logConsoleMessage('Connected');
+    });
+
+    socket.on('disconnect', function(){
+      $('#admin-server-connection-status').text('Disconnected');
+      $('#admin-server-connection-status').css('color', 'red');
+      logConsoleMessage('Disconnected');
+    });
+
+    socket.on('state_response', function(data) {
+      logConsoleMessage('state response receied');
+
+      var stateResponse = JSON.parse(data);
+      var deviceConnectionStatus = stateResponse.device_connection_status;
+      var deviceId = stateResponse.device_id;
+
+      // apply device connection status
+      $('#device-connection-status').text(deviceConnectionStatus);
+
+      // apply device id
+      $('#device-id').text(deviceId);
+    });
+
+    socket.emit('state_request');
+    logConsoleMessage('state request sent');
   </script>
 </body>
 </html>
