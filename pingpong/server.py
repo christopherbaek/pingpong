@@ -82,6 +82,7 @@ class PingPongServer(object):
                 try:
                     self._client_socket.send(message)
                 except IOError:
+                    LOGGER.info('error sending message')
                     self._clear_client_socket()
 
     def _client_is_disconnected(self):
