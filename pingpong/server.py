@@ -77,7 +77,7 @@ class PingPongServer(object):
                 # attempt to send pong
                 message = 'pong ({})'.format(time.time())
 
-                LOGGER.info('sending message: {}', message)
+                LOGGER.info('sending message: %s', message)
 
                 try:
                     self._client_socket.send(message)
