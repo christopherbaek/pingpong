@@ -10,6 +10,8 @@ from flask_socketio import SocketIO, emit
 
 # The Flask application
 FLASK_APP = Flask(__name__)
+
+# The Socket.IO application
 SOCKET_IO = SocketIO(FLASK_APP)
 
 
@@ -34,4 +36,5 @@ def handle_state_request():
 
 
 if __name__ == '__main__':
-    SOCKET_IO.run(FLASK_APP)
+    SOCKET_IO.run(FLASK_APP, host='0.0.0.0', port=8888)
+

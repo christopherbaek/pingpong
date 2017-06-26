@@ -5,7 +5,7 @@ import time
 
 class PingPongServer(object):
 
-    SERVER_PORT = 9999
+    SERVER_PORT = 5000
     SERVER_SOCKET_BACKLOG = 5
     CLIENT_SOCKET_TIMEOUT_SECONDS = 5
     SERVER_RECEIVE_BUFFER_SIZE = 1024
@@ -94,3 +94,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
