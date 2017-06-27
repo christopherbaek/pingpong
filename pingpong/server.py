@@ -1,4 +1,6 @@
+import json
 import logging
+import requests
 import socket
 import time
 
@@ -66,6 +68,7 @@ class PingPongServer(object):
             except socket.timeout:
                 LOGGER.info('timed out waiting for client message')
                 self._clear_client_socket()
+                self._send_firebase_message()
 
     def _process_client_message(self, client_message):
         if client_message == '':
@@ -91,16 +94,17 @@ class PingPongServer(object):
         if client_message.startswith('registration'):
             LOGGER.info('received registration message')
 
-            token = client_message.split(':', 1)
+            token = client_message.split(':', 1)[1]
 
             LOGGER.info('saving token: %s', token)
+            self._firebase_token = token
             return
 
     def _wait_for_client_connection(self):
         LOGGER.info('waiting for client connection')
 
         (client_socket, client_address) = self._server_socket.accept()
-        #client_socket.settimeout(PingPongServer.CLIENT_SOCKET_TIMEOUT_SECONDS)
+        client_socket.settimeout(PingPongServer.CLIENT_SOCKET_TIMEOUT_SECONDS)
         self._client_socket = client_socket
 
     def _client_is_disconnected(self):
@@ -108,6 +112,42 @@ class PingPongServer(object):
 
     def _clear_client_socket(self):
         self._client_socket = None
+
+    def _send_firebase_message(self):
+        if self._firebase_token is None:
+            LOGGER.info('Unable to send firebase message without firebase token')
+            return
+
+        headers = {
+            'Authorization': 'key={}'.format('AAAAPCzO2XY:APA91bG4aULWEJQrsPwdEGTvXJdLTX3wNYveT4Y5UEZAnjrYhiHVM6dI8F-m5CtxXDR3wPCEwsFNsZIGNuHrdPhDgMbygP33dx81JpFCQ5v3Q228seELPZOv3NmLVpNH3ZlWI940qa49'),
+            'Content-Type': 'application/json'
+        }
+
+        message = {
+            'to': self._firebase_token,
+            'data': {
+                'message': 'Wake up!'
+            }
+        }
+
+        # example full message:
+        #{
+        #    "collapse_key": "score_update",
+        #    "time_to_live": 108,
+        #    "data": {
+        #        "score": "4x8",
+        #        "time": "15:16.2342"
+        #    },
+        #    "to" : "bk3RNwTe3H0:CI2k_HHwgIpoDKCIZvvDMExUdFQ3P1..."
+        #}
+
+        LOGGER.info('sending Firebase message: %s', json.dumps(message))
+        response = requests.post(
+            'https://fcm.googleapis.com/fcm/send',
+            headers=headers,
+            json=message)
+
+        LOGGER.info('received response code: %d', response.status_code)
 
 
 def main():
