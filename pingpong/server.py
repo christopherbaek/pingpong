@@ -26,6 +26,7 @@ class PingPongServer(object):
         self._server_socket = None
         self._client_socket = None
         self._running = True
+        self._firebase_token = None
 
     def initialize(self):
         LOGGER.info('initializing')
@@ -99,7 +100,7 @@ class PingPongServer(object):
         LOGGER.info('waiting for client connection')
 
         (client_socket, client_address) = self._server_socket.accept()
-        client_socket.settimeout(PingPongServer.CLIENT_SOCKET_TIMEOUT_SECONDS)
+        #client_socket.settimeout(PingPongServer.CLIENT_SOCKET_TIMEOUT_SECONDS)
         self._client_socket = client_socket
 
     def _client_is_disconnected(self):
