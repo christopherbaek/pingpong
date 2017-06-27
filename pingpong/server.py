@@ -61,32 +61,39 @@ class PingPongServer(object):
 
             try:
                 client_message = self._client_socket.recv(PingPongServer.SERVER_RECEIVE_BUFFER_SIZE)
+                self._process_client_message(client_message)
             except socket.timeout:
                 LOGGER.info('timed out waiting for client message')
                 self._clear_client_socket()
-                break
 
-            if client_message == '':
-                LOGGER.info('detected client disconnect')
+    def _process_client_message(self, client_message):
+        if client_message == '':
+            LOGGER.info('detected client disconnect')
+            self._clear_client_socket()
+            return
+
+        if client_message == 'ping':
+            LOGGER.info('received ping message')
+
+            # attempt to send pong
+            message = 'pong ({})'.format(time.time())
+
+            LOGGER.info('sending message: %s', message)
+
+            try:
+                self._client_socket.send(message)
+            except IOError:
+                LOGGER.info('error sending message')
                 self._clear_client_socket()
-                break
+                return
 
-            if client_message == 'ping':
-                LOGGER.info('received ping message')
+        if client_message.startswith('registration'):
+            LOGGER.info('received registration message')
 
-                # attempt to send pong
-                message = 'pong ({})'.format(time.time())
+            token = client_message.split(':', 1)
 
-                LOGGER.info('sending message: %s', message)
-
-                try:
-                    self._client_socket.send(message)
-                except IOError:
-                    LOGGER.info('error sending message')
-                    self._clear_client_socket()
-
-    def _client_is_disconnected(self):
-        return self._client_socket is None
+            LOGGER.info('saving token: %s', token)
+            return
 
     def _wait_for_client_connection(self):
         LOGGER.info('waiting for client connection')
@@ -94,6 +101,9 @@ class PingPongServer(object):
         (client_socket, client_address) = self._server_socket.accept()
         client_socket.settimeout(PingPongServer.CLIENT_SOCKET_TIMEOUT_SECONDS)
         self._client_socket = client_socket
+
+    def _client_is_disconnected(self):
+        return self._client_socket is None
 
     def _clear_client_socket(self):
         self._client_socket = None
