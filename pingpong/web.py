@@ -28,7 +28,7 @@ def index():
 
 
 @app.route('/firebasetoken', methods=['POST'])
-def firebase_token():
+def save_firebase_token():
     LOGGER.info('received firebasetoken request')
     global firebase_token
 
