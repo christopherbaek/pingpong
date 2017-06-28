@@ -18,6 +18,7 @@ LOGGER.addHandler(CONSOLE_HANDLER)
 
 # app
 app = Flask(__name__)
+app.config['APPLICATION_ROOT'] = '/pingpongweb'
 firebase_token = None
 
 
@@ -49,6 +50,8 @@ def wake():
 
 
 def send_firebase_message():
+    global firebase_token
+
     if firebase_token is None:
         LOGGER.info('Unable to send firebase message without firebase token')
         return

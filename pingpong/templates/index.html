@@ -34,7 +34,7 @@
     <div class="container-fluid">
       <div class="row">
         <div class="col-xs-12">
-          <form action="/wake" method="post">
+          <form action="{{ url_for('wake') }}" method="post">
             <button type="submit">Wake</button>
           </form>
         </div>
